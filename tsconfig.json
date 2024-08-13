@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ESNext", // or "ES6"
+    "module": "CommonJS", // Use CommonJS for Node.js
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "outDir": "./dist", // Output directory for compiled files
+    "rootDir": "./src" // Root directory of your source files
+  },
+  "include": ["src/**/*"], // Include all files in the src directory
+  "exclude": ["node_modules"] // Exclude node_modules
+}
