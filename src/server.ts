@@ -1,39 +1,76 @@
 import express from "express";
 import http from "http";
-import WebSocket from "ws";
+import { Server as SocketIOServer, Socket } from "socket.io";
+
+interface CustomSocket extends Socket {
+  username?: string;
+}
 
 const app = express();
 const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+const io = new SocketIOServer(server);
 
-// Подключение к WebSocket
-wss.on("connection", (ws: WebSocket) => {
+let connectedUsers: CustomSocket[] = [];
+let userCount = 0;
+
+io.on("connection", (socket: CustomSocket) => {
   console.log("Новый клиент подключен");
 
-  ws.on("message", (message: string) => {
-    console.log(`Received: ${message}`);
-    // транслировать сообщение всем подключенным клиентам, кроме отправителя
-    wss.clients.forEach((client) => {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
-    });
+  socket.on("newUser", (username: string) => {
+    socket.username = username;
+    connectedUsers.push(socket);
+    userCount++;
+    io.emit("userCount", userCount);
+    io.emit(
+      "userList",
+      connectedUsers.map((user) => user.username)
+    );
   });
 
-  ws.on("close", () => {
+  socket.on("message", (messageData) => {
+    socket.broadcast.emit("message", messageData);
+  });
+
+  socket.on("disconnect", () => {
     console.log("Клиент отключен");
+    userCount--;
+    connectedUsers = connectedUsers.filter((user) => user !== socket);
+    io.emit("userCount", userCount);
+    io.emit(
+      "userList",
+      connectedUsers.map((user) => user.username)
+    );
   });
 
-  ws.on("error", (error) => {
-    console.error(`Ошибка WebSocket: ${error}`);
+  socket.on("error", (error) => {
+    console.error(`Ошибка Socket.IO: ${error}`);
   });
 });
 
-// Обслуживать статические файлы (например, HTML, CSS, JS)
 app.use(express.static("public"));
 
-// Запустить HTTP-сервер
 const PORT = 8080;
 server.listen(PORT, () => {
-  console.log(`HTTP -сервер работает на http://localhost:${PORT}`);
+  console.log(`HTTP-сервер работает на http://localhost:${PORT}`);
 });
+
+const shutdown = () => {
+  console.log("Сервер отключается...");
+
+  io.emit(
+    "serverShutdown",
+    "Сервер будет отключен. Пожалуйста, завершите свои действия."
+  );
+
+  connectedUsers.forEach((userSocket) => {
+    userSocket.disconnect(true);
+  });
+
+  setTimeout(() => {
+    console.log("Сервер отключен.");
+    process.exit(0);
+  }, 5000);
+};
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);

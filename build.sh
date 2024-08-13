@@ -1,59 +1,63 @@
 #!/bin/bash
 
-# Define the source and output directories
+# Определяем директории исходников и вывода
 SRC_DIR="./src"
 OUT_DIR="./dist"
 
-# Create the output directory if it doesn't exist
+# Создаем директорию вывода, если она не существует
 mkdir -p "$OUT_DIR"
 
-# Function to compile TypeScript files
+# Функция для компиляции файлов TypeScript
 compile() {
-    echo "Compiling TypeScript files from $SRC_DIR to $OUT_DIR..."
+    echo "Компиляция файлов TypeScript из $SRC_DIR в $OUT_DIR..."
     tsc --project tsconfig.json --outDir "$OUT_DIR" --target ESNext
 
-    # Check if the compilation was successful
+    # Проверяем, успешна ли компиляция
     if [ $? -eq 0 ]; then
-        echo "Compilation successful."
+        echo "Компиляция завершена успешно."
     else
-        echo "Compilation failed."
+        echo "Компиляция завершилась неудачно."
         exit 1
     fi
 }
 
-# Function to run the compiled JavaScript files
+# Функция для запуска скомпилированных JavaScript файлов
 run() {
-    # Run the server
+    # Запускаем сервер
     if [ -f "$OUT_DIR/server.js" ]; then
-        echo "Starting the server..."
+        echo "Запуск сервера..."
         node "$OUT_DIR/server.js" &
-        SERVER_PID=$!
-        echo "Server started with PID $SERVER_PID."
+        SERVER_PID=$! # Сохраняем PID сервера
+        echo "Сервер запущен с PID $SERVER_PID."
 
-        # Wait a moment to ensure the server is up and running
+        # Ожидаем некоторое время, чтобы убедиться, что сервер запущен
         sleep 2 # Задержка в 2 секунды
+
+        # Ожидаем завершения работы сервера
+        wait $SERVER_PID
     else
-        echo "Error: $OUT_DIR/server.js not found."
+        echo "Ошибка: файл $OUT_DIR/server.js не найден."
         exit 1
     fi
-
-    # Run the client
-    if [ -f "$OUT_DIR/client.js" ]; then
-        echo "Starting the client..."
-        node "$OUT_DIR/client.js"
-    else
-        echo "Error: $OUT_DIR/client.js not found."
-        exit 1
-    fi
-
-    # Wait for the server to finish
-    wait $SERVER_PID
 }
 
-# Check for the --run argument
+# Функция для остановки сервера
+stop() {
+    if [ -n "$SERVER_PID" ]; then
+        echo "Остановка сервера с PID $SERVER_PID..."
+        kill $SERVER_PID
+        echo "Сервер остановлен."
+    else
+        echo "Сервер не запущен."
+    fi
+}
+
+# Проверяем наличие аргумента --run
 if [ "$1" == "--run" ]; then
     compile
     run
+elif [ "$1" == "--stop" ]; then
+    stop
 else
     compile
 fi
