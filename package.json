@@ -17,8 +17,6 @@
   },
   "homepage": "https://github.com/masajinobe-ef/typer-websocket#readme",
   "dependencies": {
-    "crypto": "^1.0.1",
-    "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "socket.io": "^4.7.5",
     "socket.io-client": "^4.7.5",
@@ -29,7 +27,6 @@
     "@types/express": "^4.17.21",
     "@types/node": "^22.2.0",
     "@types/ws": "^8.5.12",
-    "cz-conventional-changelog": "^3.3.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.5.4",
     "undici-types": "^6.19.6"
